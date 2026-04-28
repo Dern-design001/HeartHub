@@ -14,6 +14,7 @@ import Synergy from './components/Synergy';
 import Signals from './components/Signals';
 import Identity from './components/Identity';
 import LuckyLeavesBg from './components/LuckyLeavesBg';
+import NotificationPanel from './components/NotificationPanel';
 
 // --- Static Constants ---
 
@@ -62,9 +63,12 @@ const mockOrgs = [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState('volunteer'); // 'volunteer', 'admin', 'people'
+  const [userRole, setUserRole] = useState('volunteer');
   const [activeTab, setActiveTab] = useState('home');
   const [showToast, setShowToast] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loginPopupShown, setLoginPopupShown] = useState(false);
   
   // Real-time Cloud State
   const [volunteers, setVolunteers] = useState([]);
@@ -113,8 +117,31 @@ export default function App() {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsLoggedIn(true);
+
+        // Subscribe to THIS user's notifications (helpRequests where to === user.uid)
+        const nQuery = query(
+          collection(db, 'helpRequests'),
+          orderBy('createdAt', 'desc')
+        );
+        const unsubNotifs = onSnapshot(nQuery, (snapshot) => {
+          const all = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(n => n.to === user.uid);
+          setNotifications(all);
+
+          // Auto-popup on login if there are unread and haven't shown yet
+          const unread = all.filter(n => n.status === 'pending');
+          if (unread.length > 0 && !loginPopupShown) {
+            setShowNotifications(true);
+            setLoginPopupShown(true);
+          }
+        });
+
+        return () => unsubNotifs();
       } else {
         setIsLoggedIn(false);
+        setNotifications([]);
+        setLoginPopupShown(false);
       }
     });
 
@@ -151,6 +178,19 @@ export default function App() {
   const notify = (msg) => {
     setShowToast(msg);
     setTimeout(() => setShowToast(null), 3000);
+  };
+
+  const unreadCount = notifications.filter(n => n.status === 'pending').length;
+
+  const markNotifRead = async (notifId) => {
+    try {
+      await updateDoc(doc(db, 'helpRequests', notifId), { status: 'read' });
+    } catch (e) { console.error(e); }
+  };
+
+  const markAllNotifsRead = async () => {
+    const unread = notifications.filter(n => n.status === 'pending');
+    await Promise.all(unread.map(n => updateDoc(doc(db, 'helpRequests', n.id), { status: 'read' }).catch(() => {})));
   };
 
   const handleLogout = async () => {
@@ -349,7 +389,9 @@ export default function App() {
             setActiveTab={setActiveTab} 
             userRole={userRole} 
             handleLogout={handleLogout} 
-            userData={userData} 
+            userData={userData}
+            unreadCount={unreadCount}
+            onOpenNotifications={() => setShowNotifications(true)}
           />
 
           <main className="max-w-7xl mx-auto pt-40 pb-40 px-6 relative z-10">
@@ -397,6 +439,16 @@ export default function App() {
               <p className="text-[11px] font-bold tracking-[0.6em] uppercase text-emerald-100/10 mb-4">Empowering Humanity via Agentic Souls</p>
               <p className="text-[9px] max-w-xl mx-auto leading-loose opacity-40 font-medium uppercase tracking-widest">Google Solution Challenge 2026 Submission • Multimodal Gemini Platform</p>
           </footer>
+
+          {/* Notification Panel */}
+          {showNotifications && (
+            <NotificationPanel
+              notifications={notifications}
+              onClose={() => setShowNotifications(false)}
+              onMarkRead={markNotifRead}
+              onMarkAllRead={markAllNotifsRead}
+            />
+          )}
         </>
       )}
     </div>

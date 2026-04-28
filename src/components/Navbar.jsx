@@ -1,7 +1,7 @@
 import React from 'react';
-import { Heart, User } from 'lucide-react';
+import { Heart, User, Bell } from 'lucide-react';
 
-const Navbar = ({ activeTab, setActiveTab, userRole, handleLogout, userData }) => {
+const Navbar = ({ activeTab, setActiveTab, userRole, handleLogout, userData, unreadCount, onOpenNotifications }) => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#010816]/90 backdrop-blur-2xl border-b border-emerald-500/10 px-8 h-24 flex items-center justify-between shadow-2xl">
       <div 
@@ -35,13 +35,27 @@ const Navbar = ({ activeTab, setActiveTab, userRole, handleLogout, userData }) =
         ))}
       </div>
 
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-5">
+        {/* Notification Bell */}
+        <button
+          onClick={onOpenNotifications}
+          className="relative p-3 bg-slate-800/60 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/30 rounded-2xl transition-all group"
+        >
+          <Bell size={20} className={`transition-colors ${unreadCount > 0 ? 'text-emerald-400' : 'text-emerald-500/40 group-hover:text-emerald-400'}`} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(16,185,129,0.6)] animate-pulse">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+
         <button 
           onClick={handleLogout} 
           className="text-emerald-500/30 hover:text-red-400 transition-all font-bold uppercase text-[10px] tracking-widest hidden md:block"
         >
           Disconnect
         </button>
+
         <div 
           onClick={() => setActiveTab('profile')} 
           className={`w-12 h-12 rounded-2xl bg-slate-800 border-2 ${activeTab === 'profile' ? 'border-emerald-400' : 'border-emerald-500/20'} overflow-hidden cursor-pointer hover:scale-110 transition-all flex items-center justify-center shadow-2xl`}
