@@ -1,25 +1,14 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 @plugin "tailwindcss-animate";
-
-@font-face {
-  font-family: 'Playfair Display';
-  src: url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
-}
-
-@font-face {
-  font-family: 'Inter';
-  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-}
 
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #010816;
+  color-scheme: light;
+  color: #0f172a;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -31,21 +20,21 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #010816;
+  background-color: #fff1f2;
 }
 
 .font-serif {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Playfair Display', 'Georgia', serif;
 }
 
 .font-sans {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 /* Custom selection color */
 ::selection {
-  background: rgba(16, 185, 129, 0.3);
-  color: white;
+  background: rgba(225, 29, 72, 0.15);
+  color: #e11d48;
 }
 
 /* Smooth scrolling */
@@ -60,6 +49,15 @@ html {
 
 /* Hide scrollbar for IE, Edge and Firefox */
 body {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes breath {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+.animate-breath {
+  animation: breath 4s ease-in-out infinite;
 }
