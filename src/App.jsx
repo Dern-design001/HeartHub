@@ -199,9 +199,9 @@ const App = () => {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="relative overflow-hidden pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
+          <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight text-center">
             Connect. <span className="animate-breath inline-block">Help.</span> <br/>
-            <span className="animate-breath inline-block mr-2 text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-400">Heal</span> 
+            <span className="animate-breath inline-block text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-400 pr-3 md:pr-4">Heal</span> 
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-400">Together.</span>
           </h1>
           
