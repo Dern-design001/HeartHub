@@ -504,6 +504,7 @@ const App = () => {
     const [selectedHelp, setSelectedHelp] = useState(null);
     const [requestForm, setRequestForm] = useState({ title: '', desc: '', location: '', phone: '' });
     const [submitting, setSubmitting] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleSubmitRequest = async (e) => {
       e.preventDefault();
@@ -527,15 +528,39 @@ const App = () => {
            requesterId: user.uid
         };
         await addDoc(collection(db, "tasks"), newTask);
-        alert("Your request has been published securely to Urgent Needs.");
-        setSelectedHelp(null);
+        setShowSuccessModal(true);
         setRequestForm({ title: '', desc: '', location: '', phone: '' });
-        navigate('volunteer-match');
       } catch (err) {
         console.error(err);
       }
       setSubmitting(false);
     };
+
+    const handleCloseSuccess = () => {
+      setShowSuccessModal(false);
+      setSelectedHelp(null);
+      navigate('volunteer-match');
+    };
+
+    if (showSuccessModal) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl relative overflow-hidden max-w-lg w-full text-center animate-in zoom-in duration-500 delay-100">
+              <div className="absolute top-0 left-0 right-0 h-32 bg-emerald-500/10 rounded-b-[3.5rem] -z-10" />
+              <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner shadow-emerald-200">
+                 <CheckCircle2 size={48} />
+              </div>
+              <h3 className="text-3xl font-black text-slate-900 mb-4">Request Published</h3>
+              <p className="text-slate-500 font-medium mb-10 text-lg leading-relaxed">
+                 Your request has been securely added to the Urgent Needs dashboard. The community has been notified.
+              </p>
+              <button onClick={handleCloseSuccess} className="w-full py-5 bg-slate-900 text-white font-black text-lg rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3">
+                 View Urgent Needs <ChevronRight size={20} />
+              </button>
+           </div>
+        </div>
+      );
+    }
 
     if (selectedHelp) {
       return (
@@ -555,8 +580,8 @@ const App = () => {
                 <textarea placeholder="Detailed Description of what you need..." required value={requestForm.desc} onChange={e => setRequestForm({...requestForm, desc: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium min-h-[140px]" />
                 <input type="text" placeholder="Location (e.g. New York, or Remote)" required value={requestForm.location} onChange={e => setRequestForm({...requestForm, location: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" />
                 <input type="tel" placeholder="WhatsApp Number with Country Code (e.g. 1234567890)" required value={requestForm.phone} onChange={e => setRequestForm({...requestForm, phone: e.target.value.replace(/\D/g,'')})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none transition-all font-medium" />
-                <button type="submit" disabled={submitting} className="w-full py-5 bg-rose-600 text-white font-black text-lg rounded-2xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-200 disabled:opacity-50">
-                  {submitting ? 'Authenticating & Submitting...' : 'Publish Request Securely'}
+                <button type="submit" disabled={submitting} className="w-full py-5 bg-rose-600 text-white font-black text-lg rounded-2xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-200 disabled:opacity-50 flex justify-center items-center gap-2">
+                  {submitting ? 'Authenticating...' : <><Zap size={20} fill="currentColor"/> Publish Securely</>}
                 </button>
              </form>
           </div>
