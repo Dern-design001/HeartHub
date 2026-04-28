@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { auth } from './firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { 
   Heart, 
   Leaf, 
@@ -31,7 +33,8 @@ import {
   Pause,
   ThumbsUp,
   Send,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 
 const App = () => {
@@ -40,6 +43,16 @@ const App = () => {
   const [dailyWisdom, setDailyWisdom] = useState("");
   const [playingAudio, setPlayingAudio] = useState(null);
   const [feedbackRating, setFeedbackRating] = useState(0);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   const wisdomQuotes = [
     "The heart has its reasons which reason knows nothing of.",
@@ -536,61 +549,112 @@ const App = () => {
     </div>
   );
 
-  const ProfileView = () => (
-    <div className="max-w-5xl mx-auto px-6 py-32 animate-in zoom-in duration-500">
-      <div className="mb-10 text-center md:text-left">
-        <button onClick={() => navigate('home')} className="inline-flex items-center gap-3 text-slate-400 hover:text-rose-600 transition-colors mb-8 font-black uppercase tracking-widest text-xs">
-          <ArrowLeft size={20} /> Back to Home
-        </button>
-        <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">Your Soul Profile</h2>
-        <p className="text-xl text-slate-500 font-medium">Manage your journey and readiness to give or receive support.</p>
-      </div>
-      
-      <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-xl relative overflow-hidden mb-12">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full" />
-        <div className="flex gap-8 items-center flex-col md:flex-row text-center md:text-left relative z-10">
-          <div className="w-32 h-32 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center border-4 border-white shadow-xl overflow-hidden hover:scale-105 transition-transform cursor-pointer">
-             <Heart size={48} fill="currentColor"/>
-          </div>
-          <div className="flex-1">
-             <h3 className="text-4xl font-black text-slate-900 mb-3">Alex Walker</h3>
-             <p className="text-slate-500 font-bold text-lg mb-4 flex items-center justify-center md:justify-start gap-2">
-                 <Mail size={18} className="text-slate-400"/> alex.walker@soulcommunity.org
-             </p>
-             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
-                <span className="px-5 py-2 bg-rose-50 text-rose-600 rounded-full text-xs font-black uppercase tracking-widest border border-rose-100">Soul Member</span>
-                <span className="px-5 py-2 bg-slate-50 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest border border-slate-100 flex items-center gap-2">
-                    <MapPin size={14}/> Remote / Austin
-                </span>
-             </div>
-          </div>
-        </div>
-      </div>
+  const ProfileView = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLogin, setIsLogin] = useState(true);
+    const [error, setError] = useState('');
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-rose-50 p-10 md:p-12 rounded-[3rem] text-center md:text-left flex flex-col group hover:shadow-2xl hover:shadow-rose-100 transition-all border border-rose-100">
-           <div className="w-16 h-16 bg-white text-rose-600 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
-               <HandHelping size={32} />
-           </div>
-           <h4 className="text-3xl font-black text-slate-900 mb-4">I Need Help</h4>
-           <p className="text-slate-600 mb-10 font-medium leading-relaxed flex-1 text-lg">Reach out securely and privately. Our community is here to listen and assist with exactly what you need.</p>
-           <button onClick={() => navigate('help')} className="w-full py-5 bg-rose-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-rose-200 hover:bg-rose-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
-               Fill Help Request <ChevronRight size={20} strokeWidth={3} />
-           </button>
+    const handleAuth = async (e) => {
+      e.preventDefault();
+      setError('');
+      try {
+        if (isLogin) {
+          await signInWithEmailAndPassword(auth, email, password);
+        } else {
+          await createUserWithEmailAndPassword(auth, email, password);
+        }
+      } catch (err) {
+        setError(err.message.replace('Firebase:', '').trim());
+      }
+    };
+
+    if (authLoading) return <div className="py-40 text-center font-bold text-slate-400">Loading Soul...</div>;
+
+    if (!user) {
+      return (
+        <div className="max-w-xl mx-auto px-6 py-40 animate-in zoom-in duration-500">
+          <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full" />
+            <div className="text-center mb-12 relative z-10">
+              <h2 className="text-4xl font-black text-slate-900 mb-4">{isLogin ? 'Welcome Back' : 'Become a Soul'}</h2>
+              <p className="text-slate-500 font-medium">Join the ecosystem of care and healing.</p>
+            </div>
+            {error && <p className="text-rose-600 font-bold mb-4 text-center bg-rose-50 p-3 rounded-2xl border border-rose-100">{error}</p>}
+            <form className="space-y-6 relative z-10" onSubmit={handleAuth}>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" required />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" required />
+              <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black text-lg rounded-2xl hover:bg-rose-600 transition-all shadow-xl shadow-slate-200">{isLogin ? 'Login into Soul' : 'Register New Soul'}</button>
+            </form>
+            <p className="text-center mt-6 text-slate-500 font-medium cursor-pointer hover:text-rose-600 relative z-10" onClick={() => setIsLogin(!isLogin)}>
+              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login here"}
+            </p>
+          </div>
         </div>
-        <div className="bg-emerald-50 p-10 md:p-12 rounded-[3rem] text-center md:text-left flex flex-col group hover:shadow-2xl hover:shadow-emerald-100 transition-all border border-emerald-100">
-           <div className="w-16 h-16 bg-white text-emerald-600 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
-               <Zap size={32} />
-           </div>
-           <h4 className="text-3xl font-black text-slate-900 mb-4">Ready To Help</h4>
-           <p className="text-slate-600 mb-10 font-medium leading-relaxed flex-1 text-lg">Activate your availability to receive immediate matching requests from people who urgently need your specific skills.</p>
-           <button onClick={() => { alert('Your availability status is now ACTIVE! You will receive matches soon.'); }} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
-               Set Active Status <Zap size={20} fill="currentColor" />
-           </button>
+      );
+    }
+
+    return (
+      <div className="max-w-5xl mx-auto px-6 py-32 animate-in zoom-in duration-500">
+        <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <button onClick={() => navigate('home')} className="inline-flex items-center gap-3 text-slate-400 hover:text-rose-600 transition-colors mb-8 font-black uppercase tracking-widest text-xs">
+              <ArrowLeft size={20} /> Back to Home
+            </button>
+            <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">Your Soul Profile</h2>
+            <p className="text-xl text-slate-500 font-medium">Manage your journey and readiness to give or receive support.</p>
+          </div>
+          <button onClick={() => signOut(auth)} className="px-6 py-3 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-2xl font-black flex items-center gap-2 transition-all border border-slate-100 shadow-sm">
+            <LogOut size={18}/> Disconnect
+          </button>
+        </div>
+        
+        <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-xl relative overflow-hidden mb-12">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full" />
+          <div className="flex gap-8 items-center flex-col md:flex-row text-center md:text-left relative z-10">
+            <div className="w-32 h-32 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center border-4 border-white shadow-xl overflow-hidden hover:scale-105 transition-transform cursor-pointer">
+               <Heart size={48} fill="currentColor"/>
+            </div>
+            <div className="flex-1">
+               <h3 className="text-4xl font-black text-slate-900 mb-3">Soul Member</h3>
+               <p className="text-slate-500 font-bold text-lg mb-4 flex items-center justify-center md:justify-start gap-2">
+                   <Mail size={18} className="text-slate-400"/> {user.email}
+               </p>
+               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
+                  <span className="px-5 py-2 bg-rose-50 text-rose-600 rounded-full text-xs font-black uppercase tracking-widest border border-rose-100">Verified Soul</span>
+                  <span className="px-5 py-2 bg-slate-50 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest border border-slate-100 flex items-center gap-2">
+                      <MapPin size={14}/> Earth
+                  </span>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-rose-50 p-10 md:p-12 rounded-[3rem] text-center md:text-left flex flex-col group hover:shadow-2xl hover:shadow-rose-100 transition-all border border-rose-100 cursor-pointer" onClick={() => navigate('help')}>
+             <div className="w-16 h-16 bg-white text-rose-600 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+                 <HandHelping size={32} />
+             </div>
+             <h4 className="text-3xl font-black text-slate-900 mb-4">I Need Help</h4>
+             <p className="text-slate-600 mb-10 font-medium leading-relaxed flex-1 text-lg">Reach out securely and privately. Our community is here to listen and assist with exactly what you need.</p>
+             <button className="w-full py-5 bg-rose-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-rose-200 hover:bg-rose-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+                 Fill Help Request <ChevronRight size={20} strokeWidth={3} />
+             </button>
+          </div>
+          <div className="bg-emerald-50 p-10 md:p-12 rounded-[3rem] text-center md:text-left flex flex-col group hover:shadow-2xl hover:shadow-emerald-100 transition-all border border-emerald-100 cursor-pointer" onClick={() => alert('Your availability status is now ACTIVE! You will receive matches soon.')}>
+             <div className="w-16 h-16 bg-white text-emerald-600 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+                 <Zap size={32} />
+             </div>
+             <h4 className="text-3xl font-black text-slate-900 mb-4">Ready To Help</h4>
+             <p className="text-slate-600 mb-10 font-medium leading-relaxed flex-1 text-lg">Activate your availability to receive immediate matching requests from people who urgently need your specific skills.</p>
+             <button className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+                 Set Active Status <Zap size={20} fill="currentColor" />
+             </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (currentPage) {
