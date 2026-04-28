@@ -199,11 +199,6 @@ const App = () => {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="relative overflow-hidden pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-3 bg-rose-50 text-rose-600 px-5 py-2 rounded-full text-sm font-black uppercase tracking-widest mb-8 border border-rose-100">
-            <Star size={16} fill="currentColor" />
-            <span>Empowering Global Wellness</span>
-          </div>
-          
           <h1 className="text-5xl md:text-8xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
             Connect. <span className="animate-breath inline-block">Help.</span> <br/>
             <span className="animate-breath inline-block mr-2 text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-400">Heal</span> 
