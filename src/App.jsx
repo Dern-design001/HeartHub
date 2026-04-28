@@ -599,6 +599,8 @@ const App = () => {
 
     const [profileName, setProfileName] = useState('Soul Member');
     const [profileLocation, setProfileLocation] = useState('Earth');
+    const [profileTags, setProfileTags] = useState([]);
+    const [newTag, setNewTag] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [savingProfile, setSavingProfile] = useState(false);
 
@@ -608,6 +610,7 @@ const App = () => {
           if (docSnap.exists()) {
             setProfileName(docSnap.data().name || 'Soul Member');
             setProfileLocation(docSnap.data().location || 'Earth');
+            setProfileTags(docSnap.data().tags || []);
           }
         });
       }
@@ -619,6 +622,7 @@ const App = () => {
         await setDoc(doc(db, "users", user.uid), {
           name: profileName,
           location: profileLocation,
+          tags: profileTags,
           updatedAt: new Date()
         }, { merge: true });
         setIsEditing(false);
@@ -626,6 +630,18 @@ const App = () => {
         console.error("Error saving profile: ", err);
       }
       setSavingProfile(false);
+    };
+
+    const handleAddTag = (e) => {
+      e.preventDefault();
+      if (newTag.trim() && profileTags.length < 10 && !profileTags.includes(newTag.trim().toUpperCase())) {
+        setProfileTags([...profileTags, newTag.trim().toUpperCase()]);
+        setNewTag('');
+      }
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+      setProfileTags(profileTags.filter(t => t !== tagToRemove));
     };
 
     return (
@@ -681,6 +697,29 @@ const App = () => {
                     <span className="px-5 py-2 bg-slate-50 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest border border-slate-100 flex items-center gap-2">
                         <MapPin size={14}/> {profileLocation}
                     </span>
+                  )}
+               </div>
+               
+               <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-2">
+                  {profileTags.map(tag => (
+                    <span key={tag} className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 border border-indigo-100 shadow-sm animate-in zoom-in duration-200">
+                      {tag}
+                      {isEditing && (
+                        <button onClick={() => handleRemoveTag(tag)} className="hover:text-rose-600 ml-1 transition-colors"><X size={12} strokeWidth={3}/></button>
+                      )}
+                    </span>
+                  ))}
+                  {isEditing && profileTags.length < 10 && (
+                    <form onSubmit={handleAddTag} className="flex gap-2">
+                       <input 
+                         type="text" 
+                         value={newTag} 
+                         onChange={e => setNewTag(e.target.value)} 
+                         placeholder="Add skill tag..." 
+                         className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 w-32 transition-colors" 
+                       />
+                       <button type="submit" className="px-3 py-1.5 bg-indigo-100 text-indigo-600 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-indigo-200 transition-colors">+</button>
+                    </form>
                   )}
                </div>
             </div>
