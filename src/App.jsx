@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { 
   Heart, 
   Leaf, 
@@ -48,13 +48,23 @@ const App = () => {
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [activeTasks, setActiveTasks] = useState([]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
     });
-    return () => unsub();
+    
+    const unsubTasks = onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc")), (snapshot) => {
+      const taskList = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+      setActiveTasks(taskList);
+    });
+
+    return () => {
+      unsub();
+      unsubTasks();
+    };
   }, []);
 
   const wisdomQuotes = [
@@ -99,13 +109,6 @@ const App = () => {
     { id: 3, title: "432Hz Healing Waves", duration: "60:00", category: "Frequency", icon: <Music size={20}/> },
     { id: 4, title: "Box Breathing Guide", duration: "05:00", category: "Breathwork", icon: <Volume2 size={20}/> },
     { id: 5, title: "Forest Night Whispers", duration: "30:00", category: "Nature", icon: <Moon size={20}/> }
-  ];
-
-  const activeTasks = [
-    { id: 1, title: "Peer Listener Needed", type: "Individual", urgency: "High", skill: "Emotional Support", location: "Remote", time: "2h/week" },
-    { id: 2, title: "Community Food Drive", type: "Organization", urgency: "Medium", skill: "Logistics", location: "Downtown", time: "Sat Morning" },
-    { id: 3, title: "Mental Health Blogger", type: "Organization", urgency: "Low", skill: "Writing", location: "Remote", time: "Flexible" },
-    { id: 4, title: "Senior Companion", type: "Individual", urgency: "Medium", skill: "Socializing", location: "North Side", time: "Evenings" },
   ];
 
   // --- Shared Components ---
@@ -474,15 +477,22 @@ const App = () => {
                                 </span>
                             </div>
                             <h4 className="text-3xl font-black text-slate-900 mb-4">{task.title}</h4>
+                            <p className="text-slate-600 font-medium mb-6">{task.desc}</p>
                             <div className="flex flex-wrap gap-5 text-sm font-bold text-slate-500">
                                 <div className="flex items-center gap-2"><MapPin size={18} className="text-rose-400" /> {task.location}</div>
-                                <div className="flex items-center gap-2"><Clock size={18} className="text-rose-400" /> {task.time}</div>
+                                <div className="flex items-center gap-2"><Clock size={18} className="text-rose-400" /> {task.time || 'ASAP'}</div>
                                 <div className="bg-slate-50 text-slate-800 px-4 py-1.5 rounded-full ring-1 ring-slate-200">#{task.skill}</div>
                             </div>
                         </div>
-                        <button className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-rose-600 transition-all shadow-xl shadow-slate-100">
-                            Help Now
-                        </button>
+                        {task.phone ? (
+                          <button onClick={() => window.open(`https://wa.me/${task.phone}`, '_blank')} className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-emerald-500 transition-all shadow-xl shadow-slate-100 flex items-center justify-center gap-3">
+                              <MessageCircle size={20} /> Connect on WhatsApp
+                          </button>
+                        ) : (
+                          <button className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-rose-600 transition-all shadow-xl shadow-slate-100">
+                              Help Now
+                          </button>
+                        )}
                     </div>
                 ))}
             </div>
@@ -490,67 +500,132 @@ const App = () => {
     );
   };
 
-  const HelpView = () => (
-    <div className="max-w-7xl mx-auto px-6 py-32 animate-in fade-in duration-500">
-      <div className="mb-20">
-        <button onClick={() => navigate('home')} className="inline-flex items-center gap-3 text-slate-400 hover:text-rose-600 transition-colors mb-10 font-black uppercase tracking-widest text-xs">
-          <ArrowLeft size={20} /> Back to Home
-        </button>
-        <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">Help & Support Hub</h2>
-        <p className="text-xl text-slate-500 font-medium">Empowerment starts with asking. Select your path below.</p>
-      </div>
+  const HelpView = () => {
+    const [selectedHelp, setSelectedHelp] = useState(null);
+    const [requestForm, setRequestForm] = useState({ title: '', desc: '', location: '', phone: '' });
+    const [submitting, setSubmitting] = useState(false);
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        <div className="space-y-12">
-            <div className="flex items-center gap-5 mb-6">
-                <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl shadow-inner"><Users size={32}/></div>
-                <h3 className="text-3xl font-black text-slate-900">Support for People</h3>
-            </div>
-            <div className="space-y-6">
-                {[
-                    { title: "Request a Volunteer", desc: "Our Soul Connect system will match you with someone nearby for chores, companionship, or errands.", icon: <Zap size={24}/> },
-                    { title: "Emotional Support", desc: "Connect with certified peer listeners in a safe, judgment-free environment.", icon: <MessageCircle size={24}/> },
-                    { title: "Crisis Resources", desc: "Immediate access to global helplines and emergency mental health tools.", icon: <ShieldCheck size={24}/> }
-                ].map((item, i) => (
-                    <div key={i} className="group p-8 bg-white rounded-[2.5rem] border border-slate-100 hover:border-rose-200 hover:shadow-2xl transition-all cursor-pointer">
-                        <div className="flex gap-6 text-left items-start">
-                            <div className="text-rose-500 mt-1 group-hover:scale-125 transition-transform">{item.icon}</div>
-                            <div>
-                                <h4 className="text-xl font-black text-slate-900 group-hover:text-rose-600 transition-colors mb-2">{item.title}</h4>
-                                <p className="text-slate-500 leading-relaxed font-medium">{item.desc}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+    const handleSubmitRequest = async (e) => {
+      e.preventDefault();
+      if (!user) {
+        alert("Please login via Profiles first so your request is verified.");
+        navigate('profile');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const newTask = {
+           title: requestForm.title,
+           desc: requestForm.desc,
+           location: requestForm.location,
+           phone: requestForm.phone,
+           type: selectedHelp.type || 'Individual',
+           skill: selectedHelp.skill || 'General Support',
+           urgency: 'High',
+           time: 'ASAP',
+           createdAt: new Date().toISOString(),
+           requesterId: user.uid
+        };
+        await addDoc(collection(db, "tasks"), newTask);
+        alert("Your request has been published securely to Urgent Needs.");
+        setSelectedHelp(null);
+        setRequestForm({ title: '', desc: '', location: '', phone: '' });
+        navigate('volunteer-match');
+      } catch (err) {
+        console.error(err);
+      }
+      setSubmitting(false);
+    };
+
+    if (selectedHelp) {
+      return (
+        <div className="max-w-2xl mx-auto px-6 py-32 animate-in fade-in duration-500">
+          <button onClick={() => setSelectedHelp(null)} className="inline-flex items-center gap-3 text-slate-400 hover:text-rose-600 transition-colors mb-8 font-black uppercase tracking-widest text-xs">
+            <ArrowLeft size={20} /> Back to Hub
+          </button>
+          <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-xl relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full" />
+             <div className="flex items-center gap-4 mb-6 relative z-10">
+                 <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl shadow-inner">{selectedHelp.icon}</div>
+                 <h3 className="text-3xl font-black text-slate-900">{selectedHelp.title}</h3>
+             </div>
+             <p className="text-slate-500 font-medium mb-8 relative z-10">Please provide details so volunteers can best assist you. Your WhatsApp number will be hidden publicly.</p>
+             <form onSubmit={handleSubmitRequest} className="space-y-6 relative z-10">
+                <input type="text" placeholder="Short Title (e.g. Need Groceries)" required value={requestForm.title} onChange={e => setRequestForm({...requestForm, title: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" />
+                <textarea placeholder="Detailed Description of what you need..." required value={requestForm.desc} onChange={e => setRequestForm({...requestForm, desc: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium min-h-[140px]" />
+                <input type="text" placeholder="Location (e.g. New York, or Remote)" required value={requestForm.location} onChange={e => setRequestForm({...requestForm, location: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" />
+                <input type="tel" placeholder="WhatsApp Number with Country Code (e.g. 1234567890)" required value={requestForm.phone} onChange={e => setRequestForm({...requestForm, phone: e.target.value.replace(/\D/g,'')})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none transition-all font-medium" />
+                <button type="submit" disabled={submitting} className="w-full py-5 bg-rose-600 text-white font-black text-lg rounded-2xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-200 disabled:opacity-50">
+                  {submitting ? 'Authenticating & Submitting...' : 'Publish Request Securely'}
+                </button>
+             </form>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-32 animate-in fade-in duration-500">
+        <div className="mb-20">
+          <button onClick={() => navigate('home')} className="inline-flex items-center gap-3 text-slate-400 hover:text-rose-600 transition-colors mb-10 font-black uppercase tracking-widest text-xs">
+            <ArrowLeft size={20} /> Back to Home
+          </button>
+          <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">Help & Support Hub</h2>
+          <p className="text-xl text-slate-500 font-medium">Empowerment starts with asking. Select your path below.</p>
         </div>
 
-        <div className="space-y-12">
-            <div className="flex items-center gap-5 mb-6">
-                <div className="p-4 bg-slate-50 text-slate-600 rounded-2xl shadow-inner"><Building2 size={32}/></div>
-                <h3 className="text-3xl font-black text-slate-900">For Organizations</h3>
-            </div>
-            <div className="space-y-6">
-                {[
-                    { title: "Recruit Volunteers", desc: "Post complex organizational tasks and get matched with highly skilled specialists.", icon: <Zap size={24}/> },
-                    { title: "Wellness Partnerships", desc: "Integrate HeartHub's wellness programs directly into your team's workflow.", icon: <Heart size={24}/> },
-                    { title: "Resource Sharing", desc: "Collaborate with other local NGOs on event logistics and inventory distribution.", icon: <HeartHandshake size={24}/> }
-                ].map((item, i) => (
-                    <div key={i} className="group p-8 bg-white rounded-[2.5rem] border border-slate-100 hover:border-slate-300 hover:shadow-2xl transition-all cursor-pointer">
-                        <div className="flex gap-6 text-left items-start">
-                            <div className="text-slate-500 mt-1 group-hover:scale-125 transition-transform">{item.icon}</div>
-                            <div>
-                                <h4 className="text-xl font-black text-slate-900 group-hover:text-slate-800 transition-colors mb-2">{item.title}</h4>
-                                <p className="text-slate-500 leading-relaxed font-medium">{item.desc}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+          <div className="space-y-12">
+              <div className="flex items-center gap-5 mb-6">
+                  <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl shadow-inner"><Users size={32}/></div>
+                  <h3 className="text-3xl font-black text-slate-900">Support for People</h3>
+              </div>
+              <div className="space-y-6">
+                  {[
+                      { title: "Request a Volunteer", desc: "Our Soul Connect system will match you with someone nearby for chores, companionship, or errands.", icon: <Zap size={24}/> },
+                      { title: "Emotional Support", desc: "Connect with certified peer listeners in a safe, judgment-free environment.", icon: <MessageCircle size={24}/> },
+                      { title: "Crisis Resources", desc: "Immediate access to global helplines and emergency mental health tools.", icon: <ShieldCheck size={24}/> }
+                  ].map((item, i) => (
+                      <div key={i} onClick={() => setSelectedHelp({...item, type: 'Individual', skill: item.title})} className="group p-8 bg-white rounded-[2.5rem] border border-slate-100 hover:border-rose-200 hover:shadow-2xl transition-all cursor-pointer">
+                          <div className="flex gap-6 text-left items-start">
+                              <div className="text-rose-500 mt-1 group-hover:scale-125 transition-transform">{item.icon}</div>
+                              <div>
+                                  <h4 className="text-xl font-black text-slate-900 group-hover:text-rose-600 transition-colors mb-2">{item.title}</h4>
+                                  <p className="text-slate-500 leading-relaxed font-medium">{item.desc}</p>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+
+          <div className="space-y-12">
+              <div className="flex items-center gap-5 mb-6">
+                  <div className="p-4 bg-slate-50 text-slate-600 rounded-2xl shadow-inner"><Building2 size={32}/></div>
+                  <h3 className="text-3xl font-black text-slate-900">For Organizations</h3>
+              </div>
+              <div className="space-y-6">
+                  {[
+                      { title: "Recruit Volunteers", desc: "Post complex organizational tasks and get matched with highly skilled specialists.", icon: <Zap size={24}/> },
+                      { title: "Wellness Partnerships", desc: "Integrate HeartHub's wellness programs directly into your team's workflow.", icon: <Heart size={24}/> },
+                      { title: "Resource Sharing", desc: "Collaborate with other local NGOs on event logistics and inventory distribution.", icon: <HeartHandshake size={24}/> }
+                  ].map((item, i) => (
+                      <div key={i} onClick={() => setSelectedHelp({...item, type: 'Organization', skill: item.title})} className="group p-8 bg-white rounded-[2.5rem] border border-slate-100 hover:border-slate-300 hover:shadow-2xl transition-all cursor-pointer">
+                          <div className="flex gap-6 text-left items-start">
+                              <div className="text-slate-500 mt-1 group-hover:scale-125 transition-transform">{item.icon}</div>
+                              <div>
+                                  <h4 className="text-xl font-black text-slate-900 group-hover:text-slate-800 transition-colors mb-2">{item.title}</h4>
+                                  <p className="text-slate-500 leading-relaxed font-medium">{item.desc}</p>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const ProfileView = () => {
     const [email, setEmail] = useState('');
