@@ -86,13 +86,13 @@ const App = () => {
   };
 
   // --- Mock Data ---
-  const testimonials = [
+  const [testimonials, setTestimonials] = useState([
     { name: "Sarah J.", role: "Volunteer", text: "The matching system is so intuitive. I found a local organization that needed help with logistics within minutes.", rating: 5 },
     { name: "David K.", role: "Individual", text: "I come here every morning for the Soul Audios. The 'Morning Rain' record is my favorite way to start the day.", rating: 5 },
     { name: "Elena R.", role: "NGO Director", text: "HeartHub Souls helped us find three skilled writers for our blog. It's a game-changer for small organizations.", rating: 4 },
     { name: "Marcus T.", role: "Individual", text: "Finding a peer listener who actually understands my journey has been the most important part of my healing.", rating: 5 },
     { name: "Julian P.", role: "Community Lead", text: "The resource library is my go-to for planning our weekly wellness check-ins. Highly recommended.", rating: 5 }
-  ];
+  ]);
 
   const libraryQuotes = [
     { text: "Within you, there is a stillness and a sanctuary to which you can retreat at any time.", author: "Hermann Hesse" },
@@ -310,7 +310,25 @@ const App = () => {
     </div>
   );
 
-  const FeedbackView = () => (
+  const FeedbackView = () => {
+    const [storyText, setStoryText] = useState('');
+    const [storyName, setStoryName] = useState('');
+
+    const handleStorySubmit = (e) => {
+      e.preventDefault();
+      setTestimonials([{
+        name: storyName,
+        role: "Community Member",
+        text: storyText,
+        rating: feedbackRating || 5
+      }, ...testimonials]);
+      setStoryText('');
+      setStoryName('');
+      setFeedbackRating(0);
+      navigate('stories');
+    };
+
+    return (
     <div className="max-w-3xl mx-auto px-6 py-40 animate-in zoom-in duration-500">
       <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full" />
@@ -325,7 +343,7 @@ const App = () => {
           <p className="text-slate-500 font-medium">Your journey could be the light that helps someone else find their way.</p>
         </div>
         
-        <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); navigate('stories'); }}>
+        <form className="space-y-8" onSubmit={handleStorySubmit}>
           <div className="flex flex-col items-center gap-4">
             <span className="text-sm font-black uppercase tracking-widest text-slate-400">Rate your journey</span>
             <div className="flex gap-4">
@@ -345,6 +363,8 @@ const App = () => {
           <div className="space-y-4">
             <label className="text-sm font-black uppercase tracking-widest text-slate-500 px-2">Your Narrative</label>
             <textarea 
+              value={storyText}
+              onChange={(e) => setStoryText(e.target.value)}
               placeholder="Tell us about your experience with HeartHub Souls..." 
               className="w-full px-8 py-6 rounded-[2rem] border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium min-h-[160px] bg-slate-50/50"
               required
@@ -352,7 +372,7 @@ const App = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-4">
-            <input type="text" placeholder="Name or Alias" className="flex-1 px-8 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" required />
+            <input type="text" value={storyName} onChange={(e) => setStoryName(e.target.value)} placeholder="Name or Alias" className="flex-1 px-8 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" required />
             <button type="submit" className="flex-[0.6] py-5 bg-slate-900 text-white font-black text-lg rounded-2xl hover:bg-rose-600 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3">
               Post Story <Send size={20} />
             </button>
@@ -360,7 +380,8 @@ const App = () => {
         </form>
       </div>
     </div>
-  );
+    );
+  };
 
   const ResourcesView = () => {
     const [libTab, setLibTab] = useState('audio');
