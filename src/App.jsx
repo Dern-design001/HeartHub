@@ -114,8 +114,8 @@ const App = () => {
             <Zap size={16} fill={currentPage === 'volunteer-match' ? 'currentColor' : 'none'} /> Volunteer
           </button>
           <button onClick={() => navigate('stories')} className={`transition-all hover:text-rose-600 ${currentPage === 'stories' ? 'text-rose-600' : 'text-slate-500'}`}>Soul Stories</button>
-          <button onClick={() => navigate('onboarding')} className="bg-slate-900 text-white px-7 py-3 rounded-2xl hover:bg-rose-600 transition-all shadow-xl shadow-slate-200 active:scale-95">
-            Join Now
+          <button onClick={() => navigate('profile')} className="bg-slate-900 text-white px-7 py-3 rounded-2xl hover:bg-rose-600 transition-all shadow-xl shadow-slate-200 active:scale-95">
+            Profile
           </button>
         </div>
 
@@ -163,7 +163,7 @@ const App = () => {
               ))}
             </div>
             <div className="mt-auto pt-8">
-              <button onClick={() => navigate('onboarding')} className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-rose-200 hover:bg-rose-700 active:scale-95 transition-all">Join Community</button>
+              <button onClick={() => navigate('profile')} className="w-full py-5 bg-rose-600 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-rose-200 hover:bg-rose-700 active:scale-95 transition-all">My Profile</button>
             </div>
           </div>
         </>
@@ -536,6 +536,62 @@ const App = () => {
     </div>
   );
 
+  const ProfileView = () => (
+    <div className="max-w-5xl mx-auto px-6 py-32 animate-in zoom-in duration-500">
+      <div className="mb-10 text-center md:text-left">
+        <button onClick={() => navigate('home')} className="inline-flex items-center gap-3 text-slate-400 hover:text-rose-600 transition-colors mb-8 font-black uppercase tracking-widest text-xs">
+          <ArrowLeft size={20} /> Back to Home
+        </button>
+        <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">Your Soul Profile</h2>
+        <p className="text-xl text-slate-500 font-medium">Manage your journey and readiness to give or receive support.</p>
+      </div>
+      
+      <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-xl relative overflow-hidden mb-12">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full" />
+        <div className="flex gap-8 items-center flex-col md:flex-row text-center md:text-left relative z-10">
+          <div className="w-32 h-32 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center border-4 border-white shadow-xl overflow-hidden hover:scale-105 transition-transform cursor-pointer">
+             <Heart size={48} fill="currentColor"/>
+          </div>
+          <div className="flex-1">
+             <h3 className="text-4xl font-black text-slate-900 mb-3">Alex Walker</h3>
+             <p className="text-slate-500 font-bold text-lg mb-4 flex items-center justify-center md:justify-start gap-2">
+                 <Mail size={18} className="text-slate-400"/> alex.walker@soulcommunity.org
+             </p>
+             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
+                <span className="px-5 py-2 bg-rose-50 text-rose-600 rounded-full text-xs font-black uppercase tracking-widest border border-rose-100">Soul Member</span>
+                <span className="px-5 py-2 bg-slate-50 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest border border-slate-100 flex items-center gap-2">
+                    <MapPin size={14}/> Remote / Austin
+                </span>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="bg-rose-50 p-10 md:p-12 rounded-[3rem] text-center md:text-left flex flex-col group hover:shadow-2xl hover:shadow-rose-100 transition-all border border-rose-100">
+           <div className="w-16 h-16 bg-white text-rose-600 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+               <HandHelping size={32} />
+           </div>
+           <h4 className="text-3xl font-black text-slate-900 mb-4">I Need Help</h4>
+           <p className="text-slate-600 mb-10 font-medium leading-relaxed flex-1 text-lg">Reach out securely and privately. Our community is here to listen and assist with exactly what you need.</p>
+           <button onClick={() => navigate('help')} className="w-full py-5 bg-rose-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-rose-200 hover:bg-rose-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+               Fill Help Request <ChevronRight size={20} strokeWidth={3} />
+           </button>
+        </div>
+        <div className="bg-emerald-50 p-10 md:p-12 rounded-[3rem] text-center md:text-left flex flex-col group hover:shadow-2xl hover:shadow-emerald-100 transition-all border border-emerald-100">
+           <div className="w-16 h-16 bg-white text-emerald-600 rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+               <Zap size={32} />
+           </div>
+           <h4 className="text-3xl font-black text-slate-900 mb-4">Ready To Help</h4>
+           <p className="text-slate-600 mb-10 font-medium leading-relaxed flex-1 text-lg">Activate your availability to receive immediate matching requests from people who urgently need your specific skills.</p>
+           <button onClick={() => { alert('Your availability status is now ACTIVE! You will receive matches soon.'); }} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
+               Set Active Status <Zap size={20} fill="currentColor" />
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (currentPage) {
       case 'home': return <HomeView />;
@@ -544,21 +600,7 @@ const App = () => {
       case 'resources': return <ResourcesView />;
       case 'feedback': return <FeedbackView />;
       case 'stories': return <StoriesView />;
-      case 'onboarding': return (
-        <div className="max-w-xl mx-auto px-6 py-40 animate-in zoom-in duration-500">
-          <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-black text-slate-900 mb-4">Welcome Soul</h2>
-              <p className="text-slate-500 font-medium">Join the ecosystem of care and healing.</p>
-            </div>
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('home'); }}>
-              <input type="text" placeholder="Display Name" className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" required />
-              <input type="email" placeholder="Email Address" className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" required />
-              <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black text-lg rounded-2xl hover:bg-rose-600 transition-all shadow-xl shadow-slate-200">Start My Journey</button>
-            </form>
-          </div>
-        </div>
-      );
+      case 'profile': return <ProfileView />;
       default: return <HomeView />;
     }
   };
