@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
   Heart, 
   Leaf, 
@@ -34,7 +35,9 @@ import {
   ThumbsUp,
   Send,
   Sparkles,
-  LogOut
+  LogOut,
+  Edit2,
+  Save
 } from 'lucide-react';
 
 const App = () => {
@@ -594,6 +597,37 @@ const App = () => {
       );
     }
 
+    const [profileName, setProfileName] = useState('Soul Member');
+    const [profileLocation, setProfileLocation] = useState('Earth');
+    const [isEditing, setIsEditing] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
+
+    useEffect(() => {
+      if (user) {
+        getDoc(doc(db, "users", user.uid)).then(docSnap => {
+          if (docSnap.exists()) {
+            setProfileName(docSnap.data().name || 'Soul Member');
+            setProfileLocation(docSnap.data().location || 'Earth');
+          }
+        });
+      }
+    }, [user]);
+
+    const handleSaveProfile = async () => {
+      setSavingProfile(true);
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          name: profileName,
+          location: profileLocation,
+          updatedAt: new Date()
+        }, { merge: true });
+        setIsEditing(false);
+      } catch (err) {
+        console.error("Error saving profile: ", err);
+      }
+      setSavingProfile(false);
+    };
+
     return (
       <div className="max-w-5xl mx-auto px-6 py-32 animate-in zoom-in duration-500">
         <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -616,15 +650,38 @@ const App = () => {
                <Heart size={48} fill="currentColor"/>
             </div>
             <div className="flex-1">
-               <h3 className="text-4xl font-black text-slate-900 mb-3">Soul Member</h3>
+               <div className="flex items-center justify-center md:justify-start gap-4 mb-3">
+                 {isEditing ? (
+                   <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} className="text-4xl font-black text-slate-900 border-b-2 border-slate-200 focus:border-rose-500 outline-none w-full max-w-sm px-2 py-1 bg-slate-50 rounded-t-lg" placeholder="Your Name" />
+                 ) : (
+                   <h3 className="text-4xl font-black text-slate-900">{profileName}</h3>
+                 )}
+                 
+                 {!isEditing ? (
+                   <button onClick={() => setIsEditing(true)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-rose-100">
+                     <Edit2 size={20} />
+                   </button>
+                 ) : (
+                   <button onClick={handleSaveProfile} disabled={savingProfile} className="px-5 py-2 bg-slate-900 text-white font-bold rounded-xl hover:bg-rose-600 transition-all text-sm flex items-center gap-2 disabled:opacity-50 shadow-xl shadow-slate-200">
+                     {savingProfile ? 'Saving...' : <><Save size={16}/> Save</>}
+                   </button>
+                 )}
+               </div>
                <p className="text-slate-500 font-bold text-lg mb-4 flex items-center justify-center md:justify-start gap-2">
                    <Mail size={18} className="text-slate-400"/> {user.email}
                </p>
                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
                   <span className="px-5 py-2 bg-rose-50 text-rose-600 rounded-full text-xs font-black uppercase tracking-widest border border-rose-100">Verified Soul</span>
-                  <span className="px-5 py-2 bg-slate-50 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest border border-slate-100 flex items-center gap-2">
-                      <MapPin size={14}/> Earth
-                  </span>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-200 focus-within:border-rose-500 transition-colors">
+                      <MapPin size={14} className="text-slate-400"/> 
+                      <input type="text" value={profileLocation} onChange={e => setProfileLocation(e.target.value)} className="text-xs font-black uppercase tracking-widest text-slate-700 outline-none bg-transparent w-32" placeholder="Location" />
+                    </div>
+                  ) : (
+                    <span className="px-5 py-2 bg-slate-50 text-slate-500 rounded-full text-xs font-black uppercase tracking-widest border border-slate-100 flex items-center gap-2">
+                        <MapPin size={14}/> {profileLocation}
+                    </span>
+                  )}
                </div>
             </div>
           </div>
