@@ -504,7 +504,7 @@ const App = () => {
 
   const HelpView = () => {
     const [selectedHelp, setSelectedHelp] = useState(null);
-    const [requestForm, setRequestForm] = useState({ title: '', desc: '', location: '', phone: '' });
+    const [requestForm, setRequestForm] = useState({ title: '', desc: '', location: '', phone: '', time: '' });
     const [submitting, setSubmitting] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -525,13 +525,13 @@ const App = () => {
            type: selectedHelp.type || 'Individual',
            skill: selectedHelp.skill || 'General Support',
            urgency: 'High',
-           time: 'ASAP',
+           time: requestForm.time || 'ASAP',
            createdAt: new Date().toISOString(),
            requesterId: user.uid
         };
         await addDoc(collection(db, "tasks"), newTask);
         setShowSuccessModal(true);
-        setRequestForm({ title: '', desc: '', location: '', phone: '' });
+        setRequestForm({ title: '', desc: '', location: '', phone: '', time: '' });
       } catch (err) {
         console.error(err);
       }
@@ -581,6 +581,7 @@ const App = () => {
                 <input type="text" placeholder="Short Title (e.g. Need Groceries)" required value={requestForm.title} onChange={e => setRequestForm({...requestForm, title: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" />
                 <textarea placeholder="Detailed Description of what you need..." required value={requestForm.desc} onChange={e => setRequestForm({...requestForm, desc: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium min-h-[140px]" />
                 <input type="text" placeholder="Location (e.g. New York, or Remote)" required value={requestForm.location} onChange={e => setRequestForm({...requestForm, location: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" />
+                <input type="text" placeholder="Preferred Time or Days (e.g. Sat Morning, or ASAP)" required value={requestForm.time} onChange={e => setRequestForm({...requestForm, time: e.target.value})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-rose-500 outline-none transition-all font-medium" />
                 <input type="tel" placeholder="WhatsApp Number with Country Code (e.g. 1234567890)" required value={requestForm.phone} onChange={e => setRequestForm({...requestForm, phone: e.target.value.replace(/\D/g,'')})} className="w-full px-6 py-5 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none transition-all font-medium" />
                 <button type="submit" disabled={submitting} className="w-full py-5 bg-rose-600 text-white font-black text-lg rounded-2xl hover:bg-rose-700 transition-all shadow-xl shadow-rose-200 disabled:opacity-50 flex justify-center items-center gap-2">
                   {submitting ? 'Authenticating...' : <><Zap size={20} fill="currentColor"/> Publish Securely</>}
